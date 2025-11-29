@@ -1,5 +1,9 @@
-from .models import Country, Director, Actor, Genre, Movie, Rating, MovieLanguages
+from .models import UserProfile, Country, Director, Actor, Genre, Movie, Rating, MovieLanguages, Moments
 from modeltranslation.translator import TranslationOptions,register
+
+@register(UserProfile)
+class UserProfileTranslationOptions(TranslationOptions):
+    fields = ('first_name', 'last_name')
 
 @register(Country)
 class CountryTranslationOptions(TranslationOptions):
@@ -19,10 +23,10 @@ class GenreTranslationOptions(TranslationOptions):
 
 @register(Movie)
 class MovieTranslationOptions(TranslationOptions):
-    fields = ('movie_name','types','description','status_movie')
+    fields = ('movie_name','description','status_movie')
 
 @register(MovieLanguages)
-class RatingTranslationOptions(TranslationOptions):
+class MovieLanguagesTranslationOptions(TranslationOptions):
     fields = ('language',)
 
 @register(Rating)

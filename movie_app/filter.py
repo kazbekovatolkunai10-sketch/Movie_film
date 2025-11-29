@@ -10,7 +10,6 @@ class MovieFilter(FilterSet):
             'genre': ['exact'],
             'director': ['exact'],
             'actor': ['exact'],
-            'status_movie': ['exact']
+            'status_movie': ['exact'],
         }
-
 

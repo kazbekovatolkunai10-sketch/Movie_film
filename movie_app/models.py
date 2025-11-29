@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from phonenumber_field.modelfields import PhoneNumberField
+from multiselectfield import MultiSelectField
+
 
 STATUS_CHOICES = (
     ('pro', 'pro'),
@@ -37,6 +39,7 @@ class Actor(models.Model):
     age = models.PositiveSmallIntegerField(validators=[MinValueValidator(0), MaxValueValidator(100)],  null=True, blank=True)
     actor_image = models.ImageField(upload_to='actor_image/', null=True, blank=True)
 
+
     def __str__(self):
         return f'{self.actor_name},{self.bio},{self.age},{self.actor_image}'
 
@@ -49,33 +52,46 @@ class Genre(models.Model):
 class Movie(models.Model):
     movie_name = models.CharField(max_length=100)
     year = models.DateField()
-    country =  models.ManyToManyField(Country)
-    director = models.ManyToManyField(Director)
-    actor = models.ManyToManyField(Actor)
-    genre = models.ManyToManyField(Genre)
+    country =  models.ManyToManyField(Country, related_name='countries')
+    director = models.ManyToManyField(Director, related_name='movies_director')
+    actor = models.ManyToManyField(Actor, related_name='movies_actor')
+    genre = models.ManyToManyField(Genre, related_name='movies_genre')
     TYPES_CHOICES = (
-        ('140p','140p'),
-        ('360p','360p'),
-        ('480p','480p'),
-        ('720p','720p'),
-        ('1080p','1080p'),
+        ('140p', '140p'),
+        ('360p', '360p'),
+        ('480p', '480p'),
+        ('720p', '720p'),
+        ('1080p', '1080p'),
     )
-    types = models.CharField(max_length=24, choices=TYPES_CHOICES, default='480p')
+    types = MultiSelectField(choices=TYPES_CHOICES, max_length=50, default='480p')
     movie_time = models.PositiveSmallIntegerField()
     description = models.TextField()
     movie_trailer = models.FileField(upload_to='movie_trailer/')
     movie_image = models.ImageField(upload_to='movie_photo/')
-    status_movie = models.CharField(max_length=10, choices=STATUS_CHOICES)
+    status_movie = models.CharField(max_length=10, choices=STATUS_CHOICES, default='simple')
 
     def __str__(self):
-        return (f'{self.movie_name},{self.year},{self.types},{self.movie_time}'
-                f'{self.director},{self.actor},{self.genre},{self.types},{self.movie_trailer}'
-                f'{self.description},{self.movie_image},{self.status_movie}')
+        return f'{self.movie_name},{self.year},{self.types},{self.movie_time}'
+
+
+    def get_avg_rating(self):
+        ratings = self.movie_rating.all()
+        if ratings.exists():
+            return round(sum(i.stars for i in ratings) / ratings.count(), 2)
+        return 0
+
+
+    def get_count_people(self):
+        ratings = self.movie_rating.all()
+        if ratings.exists():
+            return ratings.count()
+        return 0
+
 
 class MovieLanguages(models.Model):
     language = models.CharField(max_length=42)
     video = models.FileField(upload_to='movie_video/')
-    movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='movie_languages')
 
     def __str__(self):
         return f'{self.language},{self.video},{self.movie}'
@@ -90,9 +106,10 @@ class Moments(models.Model):
 
 class Rating(models.Model):
     user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
-    movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='movie_rating')
     stars = models.PositiveSmallIntegerField(choices=[(i, str(i)) for i in range(1,11)],
                                              null=True, blank=True)
+    parent = models.ForeignKey('self', related_name='replies', null=True, blank=True, on_delete=models.CASCADE)
     text = models.TextField(null=True, blank=True)
     created_date = models.DateTimeField(auto_now_add=True)
 
